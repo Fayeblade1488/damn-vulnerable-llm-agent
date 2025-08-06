@@ -5,8 +5,6 @@ import json
 class TransactionDb:
     def __init__(self, db_name="transactions.db"):
         self.conn = sqlite3.connect(db_name)
-        self.create_tables()
-        self.seed_data()
 
     def create_tables(self):
         cursor = self.conn.cursor()
@@ -59,6 +57,13 @@ class TransactionDb:
 
     def get_user_transactions(self, userId):
         cursor = self.conn.cursor()
+        # VULNERABILITY: This query is vulnerable to SQL injection because it uses an f-string to directly
+        # insert the userId into the query. A malicious user could craft a userId like `' OR '1'='1`
+        # to bypass the filtering and retrieve all transactions.
+        #
+        # FIX: To prevent SQL injection, you should use parameterized queries.
+        # Example:
+        # cursor.execute("SELECT * FROM Transactions WHERE userId = ?", (userId,))
         cursor.execute(f"SELECT * FROM Transactions WHERE userId = '{str(userId)}'")
         rows = cursor.fetchall()
 
@@ -68,11 +73,15 @@ class TransactionDb:
         # Convert rows to dictionaries with column names as keys
         transactions = [dict(zip(columns, row)) for row in rows]
 
-        # Convert to JSON format
-        return json.dumps(transactions, indent=4)
+        return transactions
 
     def get_user(self, user_id):
         cursor = self.conn.cursor()
+        # VULNERABILITY: This query is also vulnerable to SQL injection.
+        #
+        # FIX: Use parameterized queries to prevent this.
+        # Example:
+        # cursor.execute("SELECT userId,username FROM Users WHERE userId = ?", (user_id,))
         cursor.execute(
             f"SELECT userId,username FROM Users WHERE userId = {str(user_id)}"
         )
@@ -84,8 +93,7 @@ class TransactionDb:
         # Convert rows to dictionaries with column names as keys
         users = [dict(zip(columns, row)) for row in rows]
 
-        # Convert to JSON format
-        return json.dumps(users, indent=4)
+        return users
 
     def close(self):
         self.conn.close()
