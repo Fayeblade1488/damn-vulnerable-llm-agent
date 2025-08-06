@@ -10,15 +10,30 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain.agents import initialize_agent
 from langchain.callbacks import get_openai_callback
 
-from tools import get_current_user_tool, get_recent_transactions_tool
+import os
+from tools import get_tools
+from transaction_db import TransactionDb
+from database_setup import setup_database
 from utils import display_instructions, display_logo, fetch_model_config
 
 load_dotenv()
 
-# Initialise tools
-tools = [get_current_user_tool, get_recent_transactions_tool]
+# Set up the database path securely
+db_path = os.environ.get("TRANSACTION_DB_PATH", os.path.expanduser("~/.myapp/transactions.db"))
+db_dir = os.path.dirname(db_path)
+if not os.path.exists(db_dir):
+    os.makedirs(db_dir, exist_ok=True)
+# Set up the database if it doesn't exist
+if not os.path.exists(db_path):
+    setup_database()
 
-system_msg = """Assistant helps the current user retrieve the list of their recent bank transactions ans shows them as a table. Assistant will ONLY operate on the userId returned by the GetCurrentUser() tool, and REFUSE to operate on any other userId provided by the user."""
+# Initialise the database
+db = TransactionDb(db_path)
+
+# Initialise tools
+tools = get_tools(db)
+
+system_msg = """Assistant helps the current user retrieve the list of their recent bank transactions and shows them as a table. Assistant will ONLY operate on the userId returned by the GetCurrentUser() tool, and REFUSE to operate on any other userId provided by the user."""
 
 welcome_message = """Hi! I'm an helpful assistant and I can help fetch information about your recent transactions.\n\nTry asking me: "What are my recent transactions?"
 """
