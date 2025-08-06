@@ -16,6 +16,7 @@ def get_transactions(db: TransactionDb, userId: str):
         transactions = db.get_user_transactions(userId)
         return json.dumps(transactions)
     except Exception as e:
+        logging.exception("Exception occurred in get_transactions")
         return f"Error: {e}"
 
 def get_tools(db: TransactionDb):
