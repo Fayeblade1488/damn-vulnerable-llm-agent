@@ -18,12 +18,17 @@ from utils import display_instructions, display_logo, fetch_model_config
 
 load_dotenv()
 
+# Set up the database path securely
+db_path = os.environ.get("TRANSACTION_DB_PATH", os.path.expanduser("~/.myapp/transactions.db"))
+db_dir = os.path.dirname(db_path)
+if not os.path.exists(db_dir):
+    os.makedirs(db_dir, exist_ok=True)
 # Set up the database if it doesn't exist
-if not os.path.exists("/tmp/transactions.db"):
+if not os.path.exists(db_path):
     setup_database()
 
 # Initialise the database
-db = TransactionDb("/tmp/transactions.db")
+db = TransactionDb(db_path)
 
 # Initialise tools
 tools = get_tools(db)
